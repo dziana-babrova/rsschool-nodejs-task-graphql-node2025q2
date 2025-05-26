@@ -1,11 +1,27 @@
+import { GraphQLResolveInfo } from 'graphql';
 import { changeUserInputDto, Context, createUserInputDto, User } from '../ts-types.js';
+import { parseResolveInfo, ResolveTree } from 'graphql-parse-resolve-info';
 
 export const getAllUsers = async (
   _parent: unknown,
   _args: unknown,
-  { prisma }: Context,
+  { prisma, loaders }: Context,
+  resolvedInfo: GraphQLResolveInfo,
 ) => {
-  return prisma.user.findMany();
+  const parsedInfo = parseResolveInfo(resolvedInfo);
+  const fields = parsedInfo?.fieldsByTypeName.User as ResolveTree;
+  const users = await prisma.user.findMany({
+    include: {
+      subscribedToUser: 'subscribedToUser' in fields,
+      userSubscribedTo: 'userSubscribedTo' in fields,
+    },
+  });
+
+  users.forEach((user) => {
+    loaders.allUsersLoader.prime(user.id, user);
+  });
+
+  return users;
 };
 
 export const getUser = async (
