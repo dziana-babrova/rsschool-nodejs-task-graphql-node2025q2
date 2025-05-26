@@ -1,9 +1,4 @@
-import {
-  changeUserInputDto,
-  Context,
-  createUserInputDto,
-  User,
-} from '../ts-types.js';
+import { changeUserInputDto, Context, createUserInputDto, User } from '../ts-types.js';
 
 export const getAllUsers = async (
   _parent: unknown,
@@ -35,42 +30,29 @@ export const getUser = async (
 export const getSubscriptions = async (
   { userSubscribedTo }: User,
   _args: unknown,
-  { prisma }: Context,
+  { loaders }: Context,
 ) => {
-  const subscriptions = userSubscribedTo.map(({ authorId }) => authorId);
-  return await prisma.user.findMany({
-    where: { id: { in: subscriptions } },
-    include: {
-      profile: true,
-      posts: true,
-      userSubscribedTo: true,
-      subscribedToUser: true,
-    },
-  });
+  const subscriptions = userSubscribedTo?.map(({ authorId }) => authorId);
+  if (subscriptions) return loaders.allUsersLoader.loadMany(subscriptions);
+  return [];
 };
 
 export const getSubscribers = async (
   { subscribedToUser }: User,
   _args: unknown,
-  { prisma }: Context,
+  { loaders }: Context,
 ) => {
-  const subscribers = subscribedToUser.map(({ subscriberId }) => subscriberId);
-  return await prisma.user.findMany({
-    where: { id: { in: subscribers } },
-    include: {
-      profile: true,
-      posts: true,
-      userSubscribedTo: true,
-      subscribedToUser: true,
-    },
-  });
+  const subscribers = subscribedToUser?.map(({ subscriberId }) => subscriberId);
+  if (subscribers) return loaders.allUsersLoader.loadMany(subscribers);
+  return [];
 };
 
 export const deleteUser = async (
   _parent: unknown,
   { id }: { id: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allUsersLoader.clear(id);
   await prisma.user.delete({ where: { id } });
   return 'Deleted succesfully!';
 };
@@ -83,15 +65,15 @@ export const createUser = async (
   const user = await prisma.user.create({
     data: dto,
   });
-  console.log(user);
   return user;
 };
 
 export const updateUser = async (
   _parent: unknown,
   { dto, id }: { dto: changeUserInputDto; id: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allUsersLoader.clear(id);
   const user = await prisma.user.update({
     where: {
       id,
@@ -104,8 +86,10 @@ export const updateUser = async (
 export const subscribeTo = async (
   _parent: unknown,
   { userId, authorId }: { userId: string; authorId: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allUsersLoader.clear(userId);
+  loaders.allUsersLoader.clear(authorId);
   await prisma.subscribersOnAuthors.create({
     data: {
       subscriberId: userId,
@@ -119,8 +103,10 @@ export const subscribeTo = async (
 export const unsubscribeFrom = async (
   _parent: unknown,
   { userId, authorId }: { userId: string; authorId: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allUsersLoader.clear(userId);
+  loaders.allUsersLoader.clear(authorId);
   await prisma.subscribersOnAuthors.delete({
     where: {
       subscriberId_authorId: {

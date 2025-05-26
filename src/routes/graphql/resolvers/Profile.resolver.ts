@@ -40,8 +40,9 @@ export const createProfile = async (
 export const updateProfile = async (
   _parent: unknown,
   { dto, id }: { dto: changeProfileInputDto; id: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allProfilesLoader.clear(id);
   const profile = await prisma.profile.update({
     where: {
       id,
@@ -54,34 +55,17 @@ export const updateProfile = async (
 export const deleteProfile = async (
   _parent: unknown,
   { id }: { id: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allProfilesLoader.clear(id);
   await prisma.profile.delete({ where: { id } });
   return 'Deleted succesfully!';
 };
 
 export const getProfileByUser = async (
-  parent: User,
+  { id }: User,
   _args: unknown,
-  { prisma }: Context,
+  { loaders }: Context,
 ) => {
-  return prisma.profile.findUnique({
-    where: {
-      userId: parent.id,
-    },
-  });
+  return loaders.allProfilesLoader.load(id);
 };
-
-// export const getMemberTypeByProfile = async (
-//   parent: Profile,
-//   _args: unknown,
-//   { prisma }: Context,
-// ) => {
-//   const { memberTypeId } = parent;
-//   const profile = await prisma.profile.findUnique({
-//     where: {
-//       id: memberTypeId,
-//     },
-//   });
-//   return profile;
-// };

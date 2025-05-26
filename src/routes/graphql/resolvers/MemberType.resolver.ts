@@ -22,15 +22,9 @@ export const getMemberType = async (
 };
 
 export const getMemberTypeByProfile = async (
-  parent: Profile,
+  { memberTypeId }: Profile,
   _args: unknown,
-  { prisma }: Context,
+  { loaders }: Context,
 ) => {
-  const { memberTypeId } = parent;
-  const profile = await prisma.memberType.findUnique({
-    where: {
-      id: memberTypeId,
-    },
-  });
-  return profile;
+  return loaders.allMemberTypesLoader.load(memberTypeId);
 };

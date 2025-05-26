@@ -1,9 +1,4 @@
-import {
-  changePostInputDto,
-  Context,
-  createPostInputDto,
-  User,
-} from '../ts-types.js';
+import { changePostInputDto, Context, createPostInputDto, User } from '../ts-types.js';
 
 export const getAllPosts = async (
   _parent: unknown,
@@ -27,17 +22,11 @@ export const getPost = async (
 };
 
 export const getPostByUser = async (
-  parent: User,
+  { id }: User,
   _args: unknown,
-  { prisma }: Context,
+  { loaders }: Context,
 ) => {
-  const { id } = parent;
-  const post = await prisma.post.findMany({
-    where: {
-      authorId: id,
-    },
-  });
-  return post;
+  return loaders.allPostsLoader.load(id);
 };
 
 export const createPost = async (
@@ -54,8 +43,9 @@ export const createPost = async (
 export const updatePost = async (
   _parent: unknown,
   { dto, id }: { dto: changePostInputDto; id: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allPostsLoader.clear(id);
   const post = await prisma.post.update({
     where: {
       id,
@@ -68,8 +58,9 @@ export const updatePost = async (
 export const deletePost = async (
   _parent: unknown,
   { id }: { id: string },
-  { prisma }: Context,
+  { prisma, loaders }: Context,
 ) => {
+  loaders.allPostsLoader.clear(id);
   await prisma.post.delete({ where: { id } });
   return 'Deleted succesfully!';
 };

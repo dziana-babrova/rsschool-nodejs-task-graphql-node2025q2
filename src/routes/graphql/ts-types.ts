@@ -1,11 +1,17 @@
 import { HttpErrors } from '@fastify/sensible';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { DefaultArgs } from '@prisma/client/runtime/library.js';
-import { MemberTypeId } from '../member-types/schemas.js';
+import DataLoader from 'dataloader';
 
 export type Context = {
   prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>;
   httpErrors: HttpErrors;
+  loaders: {
+    allMemberTypesLoader: DataLoader<string, MemberType | undefined, string>;
+    allPostsLoader: DataLoader<string, Post | undefined, string>;
+    allProfilesLoader: DataLoader<string, Profile | undefined, string>;
+    allUsersLoader: DataLoader<string, User | undefined, string>;
+  };
 };
 
 export type Subscription = {
@@ -17,10 +23,8 @@ export interface User {
   id: string;
   name: string;
   balance: number;
-  profile: Profile | null;
-  posts: Post[];
-  userSubscribedTo: Subscription[];
-  subscribedToUser: Subscription[];
+  subscribedToUser?: Subscription[];
+  userSubscribedTo?: Subscription[];
 }
 
 export interface Post {
@@ -34,7 +38,7 @@ export interface Profile {
   id: string;
   isMale: boolean;
   yearOfBirth: number;
-  memberTypeId: MemberTypeId;
+  memberTypeId: string;
   userId: string;
 }
 
